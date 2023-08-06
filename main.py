@@ -22,6 +22,7 @@ class Questions(BaseModel):
 #     question: str
 #     answer: str
 
+# returns a list of question dictionaries with question and answers
 def getAllQuestions() -> list[Questions]:
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
@@ -32,40 +33,48 @@ def getAllQuestions() -> list[Questions]:
     client.close()
     return data
 
-def load_LearnedQuestions(file_path: str) -> dict:
+# takes a file path string and returns a dictionary of JSON
+def load_JSON(file_path: str) -> dict:
     with open(file_path, 'r') as file:
         data: dict = json.load(file)
     return data
-
+# takes the user's question, and a list of questions only and returns the best question string
 def find_best_match(user_question: str, questions: list[str]) -> str | None:
     matches: list = get_close_matches(user_question, questions, n=1, cutoff=0.6)
     return matches[0] if matches else None
 
+#takes a question and the entire learned questions dicitonary and returns the answer for that question
 def get_answer_for_question(question: str, LearnedQuestions: dict) -> str | None:
     for q in LearnedQuestions["questions"]:
         if q["question"] == question:
             return q["answer"]
 
+# this api route gets all questions in the mongo database
 @app.get("/")
 def index() -> list[Questions]:
     data = getAllQuestions()
     return data
 
 @app.post("/")
-def getResponse(user_msg: str, teach: bool) -> str:
+def getResponse(user_msg: str) -> str:
     answer: str = ""
-    if teach == False:
-        LearnedQuestions: dict = load_LearnedQuestions('LearnedQuestions.json')
+    
+    LearnedQuestions: dict = load_JSON('LearnedQuestions.json')
+    ChatLog: dict = load_JSON('ChatLog.json')
 
-        best_match: str | None = find_best_match(user_msg, [q["question"] for q in LearnedQuestions])
-        
+    best_match: str | None = find_best_match(user_msg, [q["question"] for q in LearnedQuestions])
+    prev_msg: dict | None = ChatLog['user_chatlog'][-1]
 
-        if best_match:
-            answer = get_answer_for_question(best_match, LearnedQuestions)
-        else:
-            answer = "I'm not too sure about this, could you tell me how to answer this?"
+    if best_match:
+        answer = get_answer_for_question(best_match, LearnedQuestions)
+        ChatLog['user_chatlog'].append({"msg": user_msg, "answered": True})
+    elif prev_msg and prev_msg['answered'] == False:
+        answer = "I'm not too sure about this, could you tell me how to answer this?"
+        ChatLog['user_chatlog'].append({"msg": user_msg, "answered": False})
     else:
-        LearnedQuestions["questions"].append({"question": user_msg, "answer": ""})
+        ChatLog['user_chatlog'].append({"msg": user_msg, "answered": True})
+        LearnedQuestions["questions"].append({"question": prev_msg['question'], "answer": user_msg})
+
     return answer
 
 # uvicorn main:app --reload to get the server started
