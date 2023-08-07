@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from difflib import get_close_matches
 from fastapi import FastAPI
 from dotenv import load_dotenv
-from typing import List
+from typing import List, Union
 
 app = FastAPI()
 
@@ -46,12 +46,12 @@ def write_JSON(file_path: str, data: dict):
         json.dump(data, file, indent=2)
 
 # takes the user's question, and a list of questions only and returns the best question string
-def find_best_match(user_question: str, questions: List[str]) -> str | None:
+def find_best_match(user_question: str, questions: List[str]) -> Union[str, None]:
     matches: list = get_close_matches(user_question, questions, n=1, cutoff=0.8)
     return matches[0] if matches else None
 
 #takes a question and the entire learned questions dicitonary and returns the answer for that question
-def get_answer_for_question(question: str, LearnedQuestions: dict) -> str | None:
+def get_answer_for_question(question: str, LearnedQuestions: dict) -> Union[str, None]:
     for q in LearnedQuestions["questions"]:
         if q["question"] == question:
             return q["answer"]
@@ -70,9 +70,9 @@ def getResponse(user_msg: str) -> str:
     LearnedQuestions: dict = load_JSON('LearnedQuestions.json')
     ChatLog: dict = load_JSON('ChatLog.json')
 
-    best_match: str | None = find_best_match(user_msg, [q['question'] for q in data])
+    best_match: Union[str, None] = find_best_match(user_msg, [q['question'] for q in data])
     if best_match == None:
-            best_match: str | None = find_best_match(user_msg, [q["question"] for q in LearnedQuestions['questions']])
+            best_match: Union[str, None] = find_best_match(user_msg, [q["question"] for q in LearnedQuestions['questions']])
     prev_msg: dict | None = None
     
     print(best_match)
