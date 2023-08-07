@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from difflib import get_close_matches
 from fastapi import FastAPI
 from dotenv import load_dotenv
+from typing import List
 
 app = FastAPI()
 
@@ -23,7 +24,7 @@ class Questions(BaseModel):
 #     answer: str
 
 # returns a list of question dictionaries with question and answers
-def getAllQuestions() -> list[dict]:
+def getAllQuestions() -> List[Questions]:
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
     collection = db["questions"]
@@ -45,7 +46,7 @@ def write_JSON(file_path: str, data: dict):
         json.dump(data, file, indent=2)
 
 # takes the user's question, and a list of questions only and returns the best question string
-def find_best_match(user_question: str, questions: list[str]) -> str | None:
+def find_best_match(user_question: str, questions: List[str]) -> str | None:
     matches: list = get_close_matches(user_question, questions, n=1, cutoff=0.8)
     return matches[0] if matches else None
 
@@ -57,7 +58,7 @@ def get_answer_for_question(question: str, LearnedQuestions: dict) -> str | None
 
 # this api route gets all questions in the mongo database
 @app.get("/")
-def index() -> list[Questions]:
+def index() -> List[Questions]:
     data = getAllQuestions()
     return data
 
