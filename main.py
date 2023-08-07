@@ -38,9 +38,15 @@ def load_JSON(file_path: str) -> dict:
     with open(file_path, 'r') as file:
         data: dict = json.load(file)
     return data
+
+# replace json file with new json file that has appended data
+def write_JSON(file_path: str, data: dict):
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=2)
+
 # takes the user's question, and a list of questions only and returns the best question string
 def find_best_match(user_question: str, questions: list[str]) -> str | None:
-    matches: list = get_close_matches(user_question, questions, n=1, cutoff=0.6)
+    matches: list = get_close_matches(user_question, questions, n=1, cutoff=0.8)
     return matches[0] if matches else None
 
 #takes a question and the entire learned questions dicitonary and returns the answer for that question
@@ -59,25 +65,41 @@ def index() -> list[Questions]:
 def getResponse(user_msg: str) -> str:
     answer: str = ""
     
+    data = getAllQuestions()
     LearnedQuestions: dict = load_JSON('LearnedQuestions.json')
     ChatLog: dict = load_JSON('ChatLog.json')
 
-    best_match: str | None = find_best_match(user_msg, [q["question"] for q in LearnedQuestions])
-    prev_msg: dict | None = ChatLog['user_chatlog'][-1]
+    best_match: str | None = find_best_match(user_msg, [q['question'] for q in data])
+    if best_match == None:
+            best_match: str | None = find_best_match(user_msg, [q["question"] for q in LearnedQuestions['questions']])
+    prev_msg: dict | None = None
+    
+    print(best_match)
 
+    if len(ChatLog['user_chatlog']) > 0:
+        prev_msg = ChatLog['user_chatlog'][-1]
+    
     if best_match:
-        answer = get_answer_for_question(best_match, LearnedQuestions)
+        answer = get_answer_for_question(best_match, {'questions': data})
+        if answer == None:
+            answer = get_answer_for_question(best_match, LearnedQuestions)
         ChatLog['user_chatlog'].append({"msg": user_msg, "answered": True})
+        write_JSON("ChatLog.json", ChatLog)
     elif prev_msg and prev_msg['answered'] == False:
+        answer = "Alright I got it, ask me again"
+        ChatLog['user_chatlog'].append({"msg": user_msg, "answered": True})
+        write_JSON("ChatLog.json", ChatLog)
+        LearnedQuestions["questions"].append({"question": prev_msg['msg'], "answer": user_msg})
+        write_JSON("LearnedQuestions.json", LearnedQuestions)
+    else:
         answer = "I'm not too sure about this, could you tell me how to answer this?"
         ChatLog['user_chatlog'].append({"msg": user_msg, "answered": False})
-    else:
-        ChatLog['user_chatlog'].append({"msg": user_msg, "answered": True})
-        LearnedQuestions["questions"].append({"question": prev_msg['question'], "answer": user_msg})
+        write_JSON("ChatLog.json", ChatLog)
 
     return answer
 
 # uvicorn main:app --reload to get the server started
+# http://127.0.0.1:8000/docs to open fast api testing ui
 
 if __name__ == "__main__":
     import uvicorn
