@@ -1,0 +1,7 @@
+certifi==2023.7.22
+difflib==3.7.3
+dotenv==0.19.1
+fastapi==0.101.0
+pymongo==4.4.1
+pydantic==2.1.1
+uvicorn==0.23.2
