@@ -1,5 +1,5 @@
 certifi==2023.7.22
-python-dotenv==1.0.0
+python-dotenv==0.21.1
 fastapi==0.101.0
 pymongo==4.4.1
 pydantic==2.1.1
