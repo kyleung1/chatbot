@@ -23,7 +23,7 @@ class Questions(BaseModel):
 #     answer: str
 
 # returns a list of question dictionaries with question and answers
-def getAllQuestions() -> list[Questions]:
+def getAllQuestions() -> list[dict]:
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
     collection = db["questions"]
