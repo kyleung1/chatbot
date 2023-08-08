@@ -1,6 +1,7 @@
 import json
 import certifi
 import os
+import random
 
 from enum import Enum
 from pydantic import BaseModel
@@ -10,6 +11,7 @@ from difflib import get_close_matches
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from typing import List
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -63,7 +65,14 @@ def index() -> List[Questions]:
     return data
 
 @app.post("/")
-def getResponse(user_msg: str) -> str:
+def getResponse(user_msg: str, session: int | None = None) -> str:
+    session_json = load_JSON('Session.json')
+    if session is None or session not in session_json['session_id']:
+        session = random.randint(1,10000)
+        session_json['session_id'].append(session)
+        write_JSON('Session.json', session_json)
+    
+    print(session_json['session_id'])
     answer: str = ""
     
     data = getAllQuestions()
@@ -97,7 +106,7 @@ def getResponse(user_msg: str) -> str:
         ChatLog['user_chatlog'].append({"msg": user_msg, "answered": False})
         write_JSON("ChatLog.json", ChatLog)
 
-    return answer
+    return JSONResponse({"answer": answer, "session": session})
 
 # uvicorn main:app --reload to get the server started
 # http://127.0.0.1:8000/docs to open fast api testing ui
