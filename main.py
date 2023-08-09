@@ -36,6 +36,31 @@ def getAllQuestions() -> List[Questions]:
     client.close()
     return data
 
+# takes the session id and returns all the chatlogs
+def getChatlogs(session_id: int) -> dict[dict]:
+    client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
+    db = client["chatbot"]
+    collection = db["chatlogs"]
+    datas = collection.find_one({"session_id": session_id})
+    client.close()
+    return datas
+
+# takes a chatlog object and inserts it into the chatlogs collection
+def insertChatlog(chatlog: dict):
+    client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
+    db = client["chatbot"]
+    collection = db["chatlogs"]
+    collection.insert_one(chatlog)
+    client.close()
+
+# takes the session id and the entire updated chatlog object returned from pymongo
+def updateChatlog(session_id: int, new_chatlog: dict):
+    client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
+    db = client["chatbot"]
+    collection = db["chatlogs"]
+    collection.update_one({"session_id": session_id}, {"$set": new_chatlog})
+    client.close()
+
 # takes a file path string and returns a dictionary of JSON
 def load_JSON(file_path: str) -> dict:
     with open(file_path, 'r') as file:
@@ -66,6 +91,14 @@ def index() -> List[Questions]:
 
 @app.post("/")
 def getResponse(user_msg: str, session: int | None = None) -> str:
+    # print(getChatlogs(0)['user_chatlog'][0]['msg'])
+    # a = getChatlogs(0)
+    # a['user_chatlog'].append({'msg': 'test2', 'answered': False})
+    # insertChatlog(0, a)
+
+    # obj = {'session_id': 1, 'user_chatlog': [{'msg': 'test', 'answered': True}]}
+    # insertChatlog(obj)
+
     session_json = load_JSON('Session.json')
     if session is None or session not in session_json['session_id']:
         session = random.randint(1,10000)
