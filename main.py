@@ -61,6 +61,31 @@ def updateChatlog(session_id: int, new_chatlog: dict):
     collection.update_one({"session_id": session_id}, {"$set": new_chatlog})
     client.close()
 
+# not tested
+def getLearnedQuestions(session_id: int) -> dict[dict]:
+    client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
+    db = client["chatbot"]
+    collection = db["learned_questions"]
+    datas = collection.find_one({"session_id": session_id})
+    client.close()
+    return datas
+
+# not tested
+def insertLearnedQuestions(question: dict):
+    client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
+    db = client["chatbot"]
+    collection = db["learned_questions"]
+    collection.insert_one(question)
+    client.close()
+
+# not tested
+def updateLearnedQuestions(session_id: int, new_question: dict):
+    client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
+    db = client["chatbot"]
+    collection = db["learned_questions"]
+    collection.update_one({"session_id": session_id}, {"$set": new_question})
+    client.close()
+
 # takes a file path string and returns a dictionary of JSON
 def load_JSON(file_path: str) -> dict:
     with open(file_path, 'r') as file:
