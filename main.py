@@ -116,26 +116,26 @@ def index() -> List[Questions]:
 
 @app.post("/")
 def getResponse(user_msg: str, session: int | None = None) -> str:
-    # print(getChatlogs(0)['user_chatlog'][0]['msg'])
-    # a = getChatlogs(0)
-    # a['user_chatlog'].append({'msg': 'test2', 'answered': False})
-    # insertChatlog(0, a)
-
-    # obj = {'session_id': 1, 'user_chatlog': [{'msg': 'test', 'answered': True}]}
-    # insertChatlog(obj)
 
     session_json = load_JSON('Session.json')
-    if session is None or session not in session_json['session_id']:
+    if session is None and session not in session_json['session_id']:
         session = random.randint(1,10000)
         session_json['session_id'].append(session)
         write_JSON('Session.json', session_json)
     
-    print(session_json['session_id'])
     answer: str = ""
     
     data = getAllQuestions()
-    LearnedQuestions: dict = load_JSON('LearnedQuestions.json')
-    ChatLog: dict = load_JSON('ChatLog.json')
+    LearnedQuestions: dict | None = getLearnedQuestions(session)
+    ChatLog: dict | None = getChatlogs(session)
+
+    if LearnedQuestions is None:
+        LearnedQuestions = {'session_id': session, 'questions': []}
+        insertLearnedQuestions(LearnedQuestions)
+
+    if ChatLog is None:
+        ChatLog = {'session_id': session, 'user_chatlog': []}
+        insertChatlog(ChatLog)
 
     best_match: str | None = find_best_match(user_msg, [q['question'] for q in data])
     if best_match == None:
@@ -152,17 +152,17 @@ def getResponse(user_msg: str, session: int | None = None) -> str:
         if answer == None:
             answer = get_answer_for_question(best_match, LearnedQuestions)
         ChatLog['user_chatlog'].append({"msg": user_msg, "answered": True})
-        write_JSON("ChatLog.json", ChatLog)
+        updateChatlog(session, ChatLog)
     elif prev_msg and prev_msg['answered'] == False:
         answer = "Alright I got it, ask me again"
         ChatLog['user_chatlog'].append({"msg": user_msg, "answered": True})
-        write_JSON("ChatLog.json", ChatLog)
+        updateChatlog(session, ChatLog)
         LearnedQuestions["questions"].append({"question": prev_msg['msg'], "answer": user_msg})
-        write_JSON("LearnedQuestions.json", LearnedQuestions)
+        updateLearnedQuestions(session, LearnedQuestions)
     else:
         answer = "I'm not too sure about this, could you tell me how to answer this?"
         ChatLog['user_chatlog'].append({"msg": user_msg, "answered": False})
-        write_JSON("ChatLog.json", ChatLog)
+        updateChatlog(session, ChatLog)
 
     return JSONResponse({"answer": answer, "session": session})
 
