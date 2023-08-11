@@ -21,10 +21,6 @@ class Questions(BaseModel):
     question: str
     answer: str
 
-# class LearnedQuestions(BaseModel):
-#     question: str
-#     answer: str
-
 # returns a list of question dictionaries with question and answers
 def getAllQuestions() -> List[Questions]:
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
@@ -36,8 +32,8 @@ def getAllQuestions() -> List[Questions]:
     client.close()
     return data
 
-# takes the session id and returns all the chatlogs
-def getChatlogs(session_id: int) -> dict[dict]:
+# takes the session id and returns all the chatlogs of that id in a dictionary
+def getChatlogs(session_id: int) -> dict:
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
     collection = db["chatlogs"]
@@ -45,7 +41,7 @@ def getChatlogs(session_id: int) -> dict[dict]:
     client.close()
     return datas
 
-# takes a chatlog object and inserts it into the chatlogs collection
+# takes a chatlog dictionary and inserts it into the chatlogs collection
 def insertChatlog(chatlog: dict):
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
@@ -53,7 +49,7 @@ def insertChatlog(chatlog: dict):
     collection.insert_one(chatlog)
     client.close()
 
-# takes the session id and the entire updated chatlog object returned from pymongo
+# takes the session id and the entire updated chatlog object returned from pymongo and updates it in db
 def updateChatlog(session_id: int, new_chatlog: dict):
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
@@ -61,7 +57,7 @@ def updateChatlog(session_id: int, new_chatlog: dict):
     collection.update_one({"session_id": session_id}, {"$set": new_chatlog})
     client.close()
 
-# not tested
+# takes the session id and returns all the learned questions of that id in a dictionary
 def getLearnedQuestions(session_id: int) -> dict[dict]:
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
@@ -70,7 +66,7 @@ def getLearnedQuestions(session_id: int) -> dict[dict]:
     client.close()
     return datas
 
-# not tested
+# takes a learned questions dictionary and inserts it into the learned_questions collection
 def insertLearnedQuestions(question: dict):
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
@@ -78,7 +74,7 @@ def insertLearnedQuestions(question: dict):
     collection.insert_one(question)
     client.close()
 
-# not tested
+# takes the session id and the entire updated learned questions object returned from pymongo and updates
 def updateLearnedQuestions(session_id: int, new_question: dict):
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
     db = client["chatbot"]
@@ -102,7 +98,7 @@ def find_best_match(user_question: str, questions: List[str]) -> str | None:
     matches: list = get_close_matches(user_question, questions, n=1, cutoff=0.8)
     return matches[0] if matches else None
 
-#takes a question and the entire learned questions dicitonary and returns the answer for that question
+# takes a question and the entire learned questions dicitonary and returns the answer for that question
 def get_answer_for_question(question: str, LearnedQuestions: dict) -> str | None:
     for q in LearnedQuestions["questions"]:
         if q["question"] == question:
