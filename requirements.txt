@@ -1,6 +1,5 @@
-certifi==2023.7.22
-python-dotenv==0.21.1
-fastapi
-pymongo==4.4.1
-pydantic==2.1.1
+certifi
+python-dotenv
+fastapi[all]
+pymongo
 uvicorn[standard]
