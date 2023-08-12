@@ -3,3 +3,4 @@ python-dotenv
 fastapi[all]
 pymongo
 uvicorn[standard]
+dotenv
