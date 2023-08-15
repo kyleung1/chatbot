@@ -33,6 +33,10 @@ class Questions(BaseModel):
     question: str
     answer: str
 
+class userMsg(BaseModel):
+    user_msg: str
+    session: int | None = None
+
 # returns a list of question dictionaries with question and answers
 def getAllQuestions() -> List[Questions]:
     client = MongoClient(os.getenv('mongo_uri'), tlsCAFile=certifi.where())
@@ -123,7 +127,9 @@ def index() -> List[Questions]:
     return data
 
 @app.post("/")
-def getResponse(user_msg: str, session: int | None = None) -> str:
+async def getResponse(body: userMsg) -> dict:
+    user_msg = body.user_msg
+    session = body.session
 
     session_json = load_JSON('Session.json')
     if session is None and session not in session_json['session_id']:
